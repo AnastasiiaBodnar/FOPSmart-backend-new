@@ -9,6 +9,7 @@ pnpm-debug.log*
 
 # Env
 .env
+.env.sample
 .env.*.local
 .env.local
 .env.development.local
