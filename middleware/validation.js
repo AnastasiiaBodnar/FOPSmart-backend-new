@@ -34,7 +34,17 @@ const loginValidation = [
         .withMessage('Password is required')
 ];
 
+const connectMonobankValidation = [
+    body('token')
+        .trim()
+        .notEmpty()
+        .withMessage('Monobank token is required')
+        .isLength({ min: 20 })
+        .withMessage('Invalid token format')
+];
+
 module.exports = {
     registerValidation,
-    loginValidation
+    loginValidation,
+    connectMonobankValidation 
 };
