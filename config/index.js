@@ -17,6 +17,9 @@ const config = {
 		secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
 		expiresIn: process.env.JWT_EXPIRES_IN || '7d'
 	},
+	encryption: {
+		secret: process.env.ENCRYPTION_SECRET || 'your-super-secret-encryption-key-change-in-production'
+	},
 	database: {
 		// host: process.env.PGHOST || 'localhost',
 		// port: parseInt(process.env.PGPORT || '5432', 10),

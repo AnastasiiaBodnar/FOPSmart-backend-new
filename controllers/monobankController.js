@@ -19,8 +19,8 @@ class MonobankController {
             //     });
             // }
 
-            // const { token } = req.body;
-            // const userId = req.user.id;
+            const { token } = req.body;
+            const userId = req.user.id;
 
             // const existingConnection = await MonobankConnection.hasConnection(userId);
             // if (existingConnection) {
@@ -130,7 +130,7 @@ class MonobankController {
     static async getClientInfo(req, res) {
         try {
             const userId = req.user.id;
-            
+
             const token = await MonobankConnection.getToken(userId);
             if (!token) {
                 return res.status(404).json({
@@ -148,7 +148,7 @@ class MonobankController {
 
         } catch (error) {
             console.error('Get client info error:', error);
-            
+
             if (error.message.includes('Invalid')) {
                 return res.status(401).json({
                     message: 'Monobank token is invalid or expired. Please reconnect.'

@@ -38,7 +38,7 @@ const { connectMonobankValidation } = require('../middleware/validation');
  *       409:
  *         description: Connection already exists
  */
-router.post('/connect', MonobankController.connect);
+router.post('/connect', verifyToken, connectMonobankValidation, MonobankController.connect);
 
 /**
  * @swagger
