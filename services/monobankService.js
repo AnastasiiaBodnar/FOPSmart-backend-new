@@ -107,7 +107,6 @@ async function getStatements(token, accountId, from, to = null) {
 
         const transactions = await makeMonobankRequest(endpoint, token);
         
-        // Return empty array if no transactions
         if (!Array.isArray(transactions)) {
             return [];
         }
