@@ -3,6 +3,7 @@
 const { validationResult } = require('express-validator');
 const MonobankConnection = require('../models/MonobankConnection');
 const monobankService = require('../services/monobankService');
+const db = require('../db/pool');
 
 class MonobankController {
     /**
@@ -11,29 +12,29 @@ class MonobankController {
      */
     static async connect(req, res) {
         try {
-            // const errors = validationResult(req);
-            // if (!errors.isEmpty()) {
-            //     return res.status(400).json({
-            //         message: 'Validation failed',
-            //         errors: errors.array()
-            //     });
-            // }
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    message: 'Validation failed',
+                    errors: errors.array()
+                });
+            }
 
             const { token } = req.body;
             const userId = req.user.id;
 
-            // const existingConnection = await MonobankConnection.hasConnection(userId);
-            // if (existingConnection) {
-            //     return res.status(409).json({
-            //         message: 'Monobank connection already exists. Please disconnect first.'
-            //     });
-            // }
+            const existingConnection = await MonobankConnection.hasConnection(userId);
+            if (existingConnection) {
+                return res.status(409).json({
+                    message: 'Monobank connection already exists. Please disconnect first.'
+                });
+            }
 
             let clientInfo;
             try {
-                let token = 'uPX2hnpU0NDHOISoba1Bi4J2yznksIskniYIf6yX2OsI';
                 clientInfo = await monobankService.getClientInfo(token);
             } catch (error) {
+                console.error('Monobank API error:', error);
                 return res.status(400).json({
                     message: error.message || 'Invalid Monobank token'
                 });
@@ -106,14 +107,18 @@ class MonobankController {
         try {
             const userId = req.user.id;
 
-            const hasConnection = await MonobankConnection.hasConnection(userId);
-            if (!hasConnection) {
+            const query = `
+                DELETE FROM monobank_connections 
+                WHERE user_id = $1
+                RETURNING id
+            `;
+            const result = await db.query(query, [userId]);
+
+            if (result.rows.length === 0) {
                 return res.status(404).json({
                     message: 'No Monobank connection found'
                 });
             }
-
-            await MonobankConnection.deactivate(userId);
 
             res.json({
                 message: 'Monobank disconnected successfully'
