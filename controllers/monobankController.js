@@ -9,31 +9,31 @@ class MonobankController {
      * Connect user's Monobank account
      * POST /api/monobank/connect
      */
-    static async connect(req, res) {
+ static async connect(req, res) {
         try {
-            // const errors = validationResult(req);
-            // if (!errors.isEmpty()) {
-            //     return res.status(400).json({
-            //         message: 'Validation failed',
-            //         errors: errors.array()
-            //     });
-            // }
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    message: 'Validation failed',
+                    errors: errors.array()
+                });
+            }
 
             const { token } = req.body;
             const userId = req.user.id;
 
-            // const existingConnection = await MonobankConnection.hasConnection(userId);
-            // if (existingConnection) {
-            //     return res.status(409).json({
-            //         message: 'Monobank connection already exists. Please disconnect first.'
-            //     });
-            // }
+            const existingConnection = await MonobankConnection.hasConnection(userId);
+            if (existingConnection) {
+                return res.status(409).json({
+                    message: 'Monobank connection already exists. Please disconnect first.'
+                });
+            }
 
             let clientInfo;
             try {
-                let token = 'uPX2hnpU0NDHOISoba1Bi4J2yznksIskniYIf6yX2OsI';
                 clientInfo = await monobankService.getClientInfo(token);
             } catch (error) {
+                console.error('Monobank API error:', error);
                 return res.status(400).json({
                     message: error.message || 'Invalid Monobank token'
                 });
