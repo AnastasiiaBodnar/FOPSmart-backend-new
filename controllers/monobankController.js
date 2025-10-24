@@ -3,13 +3,14 @@
 const { validationResult } = require('express-validator');
 const MonobankConnection = require('../models/MonobankConnection');
 const monobankService = require('../services/monobankService');
+const db = require('../db/pool');
 
 class MonobankController {
     /**
      * Connect user's Monobank account
      * POST /api/monobank/connect
      */
- static async connect(req, res) {
+    static async connect(req, res) {
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
@@ -106,14 +107,18 @@ class MonobankController {
         try {
             const userId = req.user.id;
 
-            const hasConnection = await MonobankConnection.hasConnection(userId);
-            if (!hasConnection) {
+            const query = `
+                DELETE FROM monobank_connections 
+                WHERE user_id = $1
+                RETURNING id
+            `;
+            const result = await db.query(query, [userId]);
+
+            if (result.rows.length === 0) {
                 return res.status(404).json({
                     message: 'No Monobank connection found'
                 });
             }
-
-            await MonobankConnection.deactivate(userId);
 
             res.json({
                 message: 'Monobank disconnected successfully'
