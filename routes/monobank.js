@@ -27,7 +27,6 @@ const { connectMonobankValidation } = require('../middleware/validation');
  *               token:
  *                 type: string
  *                 description: Monobank API token
- *                 example: uD1234567890abcdefghijklmnopqrstuvwxyz
  *     responses:
  *       201:
  *         description: Monobank connected successfully
@@ -35,8 +34,6 @@ const { connectMonobankValidation } = require('../middleware/validation');
  *         description: Invalid token
  *       401:
  *         description: Unauthorized
- *       409:
- *         description: Connection already exists
  */
 router.post('/connect', verifyToken, connectMonobankValidation, MonobankController.connect);
 
@@ -71,6 +68,24 @@ router.get('/status', verifyToken, MonobankController.getStatus);
  *         description: No connection found
  */
 router.get('/client-info', verifyToken, MonobankController.getClientInfo);
+
+/**
+ * @swagger
+ * /api/monobank/sync:
+ *   post:
+ *     summary: Sync transactions from Monobank
+ *     tags: [Monobank]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Transactions synced successfully
+ *       404:
+ *         description: No Monobank connection found
+ *       429:
+ *         description: Too many requests (rate limit)
+ */
+router.post('/sync', verifyToken, MonobankController.syncTransactions);
 
 /**
  * @swagger
