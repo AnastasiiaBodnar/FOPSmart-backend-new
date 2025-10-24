@@ -11,11 +11,10 @@ const MONOBANK_API_URL = 'https://api.monobank.ua';
  * @returns {Promise<Object>} API response
  */
 function makeMonobankRequest(endpoint, token) {
-    console.log('token ', token)
     return new Promise((resolve, reject) => {
         const options = {
             hostname: 'api.monobank.ua',
-            path: '/personal/client-info',
+            path: endpoint,
             method: 'GET',
             headers: {
                 'X-Token': token,
@@ -25,8 +24,6 @@ function makeMonobankRequest(endpoint, token) {
 
         const req = https.request(options, (res) => {
             let data = '';
-
-            console.log('res ', res.data)
 
             res.on('data', (chunk) => {
                 data += chunk;
@@ -56,7 +53,6 @@ function makeMonobankRequest(endpoint, token) {
         });
 
         req.on('error', (error) => {
-            console.log('error ', error)
             reject({
                 message: 'Network error when connecting to Monobank',
                 error: error.message
@@ -75,7 +71,7 @@ function makeMonobankRequest(endpoint, token) {
 async function getClientInfo(token) {
     try {
         const clientInfo = await makeMonobankRequest('/personal/client-info', token);
-        console.log('client ', clientInfo)
+        
         return {
             clientId: clientInfo.clientId,
             name: clientInfo.name,
@@ -97,7 +93,7 @@ async function getClientInfo(token) {
 /**
  * Gets transactions for a specific account
  * @param {string} token - Monobank token
- * @param {string} accountId - Account ID (from client info)
+ * @param {string} accountId - Account ID (from client info, e.g., "0")
  * @param {number} from - Unix timestamp (from date)
  * @param {number} to - Unix timestamp (to date, optional)
  * @returns {Promise<Array>} List of transactions
@@ -110,12 +106,20 @@ async function getStatements(token, accountId, from, to = null) {
         }
 
         const transactions = await makeMonobankRequest(endpoint, token);
+        
+        // Return empty array if no transactions
+        if (!Array.isArray(transactions)) {
+            return [];
+        }
+        
         return transactions;
     } catch (error) {
         if (error.statusCode === 429) {
             throw new Error('Too many requests to Monobank API. Please try again in 60 seconds');
+        } else if (error.statusCode === 403) {
+            throw new Error('Invalid Monobank token or access denied');
         } else {
-            throw new Error(error.message || 'Failed to fetch transactions');
+            throw new Error(error.message || 'Failed to fetch transactions from Monobank');
         }
     }
 }
