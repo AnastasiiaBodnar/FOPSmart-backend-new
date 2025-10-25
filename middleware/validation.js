@@ -43,8 +43,20 @@ const connectMonobankValidation = [
         .withMessage('Invalid token format')
 ];
 
+const updateFopSettingsValidation = [
+    body('fopGroup')
+        .isInt({ min: 1, max: 3 })
+        .withMessage('FOP group must be 1, 2, or 3'),
+    
+    body('taxSystem')
+        .optional()
+        .isIn(['single_tax', 'general', 'simplified'])
+        .withMessage('Invalid tax system')
+];
+
 module.exports = {
     registerValidation,
     loginValidation,
-    connectMonobankValidation 
+    connectMonobankValidation,
+    updateFopSettingsValidation
 };
