@@ -13,6 +13,7 @@ var usersRouter = require('./routes/users');
 var authRouter = require('./routes/auth');
 var monobankRouter = require('./routes/monobank');
 var transactionsRouter = require('./routes/transactions');
+var profileRouter = require('./routes/profile');
 
 var app = express();
 
@@ -33,6 +34,7 @@ app.use('/users', usersRouter);
 app.use('/api/auth', authRouter); 
 app.use('/api/monobank', monobankRouter);
 app.use('/api/transactions', transactionsRouter);
+app.use('/api/profile', profileRouter);
 
 app.get('/healthz', async function(req, res) {
   try {
