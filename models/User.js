@@ -43,6 +43,29 @@ class User {
     static async validatePassword(plainPassword, hashedPassword) {
         return await bcrypt.compare(plainPassword, hashedPassword);
     }
+
+    static async updateFopSettings(userId, fopGroup, taxSystem) {
+        const query = `
+            UPDATE users 
+            SET fop_group = $1, tax_system = $2, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $3
+            RETURNING id, fop_group, tax_system
+        `;
+        
+        const result = await db.query(query, [fopGroup, taxSystem, userId]);
+        return result.rows[0];
+    }
+
+    static async getFopInfo(userId) {
+        const query = `
+            SELECT fop_group, tax_system, created_at
+            FROM users
+            WHERE id = $1
+        `;
+        
+        const result = await db.query(query, [userId]);
+        return result.rows[0];
+    }
 }
 
 module.exports = User;
