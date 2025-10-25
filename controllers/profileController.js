@@ -1,5 +1,6 @@
 'use strict';
 
+const { validationResult } = require('express-validator');
 const User = require('../models/User');
 const LimitService = require('../services/limitService');
 const { getLimitByGroup } = require('../config/fopLimits');
@@ -40,6 +41,14 @@ class ProfileController {
 
     static async updateFopSettings(req, res) {
         try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    message: 'Validation failed',
+                    errors: errors.array()
+                });
+            }
+            
             const userId = req.user.id;
             const { fopGroup, taxSystem } = req.body;
             
