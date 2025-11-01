@@ -20,6 +20,28 @@ const options = {
         description: 'Production server'
       }
     ],
+    tags: [
+      {
+        name: 'Authentication',
+        description: 'User authentication and registration'
+      },
+      {
+        name: 'Profile',
+        description: 'User profile and FOP settings'
+      },
+      {
+        name: 'Monobank',
+        description: 'Monobank integration and account management'
+      },
+      {
+        name: 'Transactions',
+        description: 'Transaction management and filtering'
+      },
+      {
+        name: 'Analytics',
+        description: 'Income, expense, and user activity analytics'
+      }
+    ],
     components: {
       securitySchemes: {
         bearerAuth: {
