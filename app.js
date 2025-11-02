@@ -26,13 +26,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   explorer: true,
-  customCss: '.swagger-ui .topbar { display: none }',
+  customCssUrl: '/stylesheets/swagger-dark.css',
   customSiteTitle: 'Backend API Docs'
 }));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/api/auth', authRouter); 
+app.use('/api/auth', authRouter);
 app.use('/api/monobank', monobankRouter);
 app.use('/api/transactions', transactionsRouter);
 app.use('/api/profile', profileRouter);
