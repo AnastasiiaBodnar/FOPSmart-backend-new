@@ -14,10 +14,10 @@ const {
  * @swagger
  * /api/auth/register:
  *   post:
- *     summary: Реєстрація нового користувача з групою ФОП
+ *     summary: Register new user with FOP group
  *     description: |
- *       Реєструє нового користувача з автоматичним встановленням системи оподаткування 'single_tax' (єдиний податок).
- *       Це найкраща система для 99% ФОП в Україні.
+ *       Registers a new user with automatic tax system setup as 'single_tax'.
+ *       This is the best tax system for 99% of FOPs in Ukraine.
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -36,35 +36,35 @@ const {
  *                 type: string
  *                 format: email
  *                 example: user@example.com
- *                 description: Email адреса користувача
+ *                 description: User email address
  *               password:
  *                 type: string
  *                 format: password
- *                 minLength: 6
+ *                 minLength: 8
  *                 example: password123
- *                 description: Пароль (мінімум 6 символів)
+ *                 description: Password (minimum 6 characters)
  *               firstName:
  *                 type: string
- *                 example: Іван
- *                 description: Ім'я користувача
+ *                 example: Ivan
+ *                 description: User first name
  *               lastName:
  *                 type: string
- *                 example: Петренко
- *                 description: Прізвище користувача
+ *                 example: Petrenko
+ *                 description: User last name
  *               fopGroup:
  *                 type: integer
  *                 enum: [1, 2, 3]
  *                 example: 2
  *                 description: |
- *                   Група ФОП (обов'язково):
- *                   - 1: до 505,676 грн/рік (10% податок + 22% ЄСВ)
- *                   - 2: до 3,028,000 грн/рік (20% податок + 22% ЄСВ) ⭐ Найпопулярніше
- *                   - 3: до 7,000,000 грн/рік (5% податок + 22% ЄСВ + ПДВ 20%)
+ *                   FOP group (required):
+ *                   - 1: up to 505,676 UAH/year (10% tax + 22% ECV)
+ *                   - 2: up to 3,028,000 UAH/year (20% tax + 22% ECV) ⭐ Most popular
+ *                   - 3: up to 7,000,000 UAH/year (5% tax + 22% ECV + VAT 20%)
  *                   
- *                   Система оподаткування встановлюється автоматично як 'single_tax' (єдиний податок)
+ *                   Tax system is automatically set as 'single_tax'
  *     responses:
  *       201:
- *         description: Користувача успішно зареєстровано
+ *         description: User successfully registered
  *         content:
  *           application/json:
  *             schema:
@@ -72,7 +72,7 @@ const {
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Користувача успішно зареєстровано
+ *                   example: User successfully registered
  *                 user:
  *                   type: object
  *                   properties:
@@ -89,7 +89,7 @@ const {
  *                     taxSystem:
  *                       type: string
  *                       example: single_tax
- *                       description: Завжди 'single_tax'
+ *                       description: Always 'single_tax'
  *                 fopLimit:
  *                   type: object
  *                   properties:
@@ -97,7 +97,7 @@ const {
  *                       type: integer
  *                     annualLimit:
  *                       type: number
- *                       description: Річний ліміт в гривнях
+ *                       description: Annual limit in UAH
  *                     description:
  *                       type: string
  *                     taxRate:
@@ -106,7 +106,7 @@ const {
  *                       type: number
  *                 token:
  *                   type: string
- *                   description: JWT токен для авторизації
+ *                   description: JWT token for authorization
  *       400:
  *         description: Помилка валідації
  *       409:
@@ -118,7 +118,7 @@ router.post('/register', registerValidation, AuthController.register);
  * @swagger
  * /api/auth/login:
  *   post:
- *     summary: Вхід користувача
+ *     summary: User login
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -138,7 +138,7 @@ router.post('/register', registerValidation, AuthController.register);
  *                 example: password123
  *     responses:
  *       200:
- *         description: Успішний вхід
+ *         description: Successful login
  *         content:
  *           application/json:
  *             schema:
