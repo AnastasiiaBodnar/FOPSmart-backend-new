@@ -108,9 +108,9 @@ const {
  *                   type: string
  *                   description: JWT token for authorization
  *       400:
- *         description: Validation error
+ *         description: Помилка валідації
  *       409:
- *         description: User already exists
+ *         description: Користувач вже існує
  */
 router.post('/register', registerValidation, AuthController.register);
 
@@ -153,7 +153,7 @@ router.post('/register', registerValidation, AuthController.register);
  *                 token:
  *                   type: string
  *       401:
- *         description: Invalid credentials
+ *         description: Невірні дані для входу
  */
 router.post('/login', loginValidation, AuthController.login);
 
