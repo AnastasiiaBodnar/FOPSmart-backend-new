@@ -37,8 +37,8 @@ class TransactionController {
             res.json({
                 transactions: transactions.map(tx => ({
                     id: tx.id,
-                    amount: tx.amount,
-                    balance: tx.balance,
+                    amount: tx.amount / 100,
+                    balance: tx.balance / 100,
                     currencyCode: tx.currency_code,
                     description: tx.description,
                     comment: tx.comment,
@@ -59,7 +59,7 @@ class TransactionController {
                         iban: tx.iban,
                         maskedPan: tx.masked_pan
                     },
-                    cashback: tx.cashback_amount,
+                    cashback: tx.cashback_amount / 100,
                     receiptId: tx.receipt_id
                 })),
                 pagination: {
@@ -95,16 +95,16 @@ class TransactionController {
             res.json({
                 totalTransactions: parseInt(stats.total_transactions),
                 income: {
-                    total: parseInt(stats.total_income) || 0,
+                    total: (parseInt(stats.total_income) || 0) / 100,
                     count: parseInt(stats.income_count) || 0
                 },
                 expense: {
-                    total: Math.abs(parseInt(stats.total_expense)) || 0,
+                    total: Math.abs(parseInt(stats.total_expense)) / 100 || 0,
                     count: parseInt(stats.expense_count) || 0,
-                    average: Math.abs(parseInt(stats.avg_expense)) || 0
+                    average: Math.abs(parseInt(stats.avg_expense)) / 100 || 0
                 },
-                cashback: parseInt(stats.total_cashback) || 0,
-                netIncome: (parseInt(stats.total_income) || 0) + (parseInt(stats.total_expense) || 0)
+                cashback: (parseInt(stats.total_cashback) || 0) / 100,
+                netIncome: ((parseInt(stats.total_income) || 0) + (parseInt(stats.total_expense) || 0)) / 100
             });
 
         } catch (error) {
@@ -135,7 +135,7 @@ class TransactionController {
                     parentCategory: cat.parent_category_uk,
                     color: cat.color,
                     transactionCount: parseInt(cat.transaction_count),
-                    totalSpent: parseInt(cat.total_spent)
+                    totalSpent: parseInt(cat.total_spent) / 100
                 }))
             });
 
@@ -157,7 +157,7 @@ class TransactionController {
             res.json({
                 accounts: accounts.map(acc => ({
                     id: acc.id,
-                    balance: acc.balance,
+                    balance: acc.balance / 100,
                     currencyCode: acc.currency_code,
                     iban: acc.iban,
                     maskedPan: acc.masked_pan,
@@ -165,7 +165,7 @@ class TransactionController {
                 })),
                 total: totalBalances.map(tb => ({
                     currencyCode: tb.currency_code,
-                    balance: parseInt(tb.total_balance),
+                    balance: parseInt(tb.total_balance) / 100,
                     accountsCount: parseInt(tb.accounts_count)
                 }))
             });
