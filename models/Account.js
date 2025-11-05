@@ -3,13 +3,6 @@
 const db = require('../db/pool');
 
 class Account {
-    /**
-     * Create new account(s) from Monobank client info
-     * @param {number} userId - User ID
-     * @param {number} monobankConnectionId - Monobank connection ID
-     * @param {Array} accounts - Array of account objects from Monobank API
-     * @returns {Promise<Array>} Created accounts
-     */
     static async bulkCreate(userId, monobankConnectionId, accounts) {
         const client = await db.getClient();
         
@@ -28,6 +21,7 @@ class Account {
                     DO UPDATE SET
                         balance = EXCLUDED.balance,
                         credit_limit = EXCLUDED.credit_limit,
+                        account_type = EXCLUDED.account_type,
                         updated_at = CURRENT_TIMESTAMP
                     RETURNING *
                 `;
@@ -41,9 +35,9 @@ class Account {
                     account.currencyCode || 980,
                     account.cashbackType || null,
                     account.iban || null,
-                    account.type || 'black',
+                    account.type, 
                     account.maskedPan ? account.maskedPan[0] : null,
-                    account.type || null
+                    account.type 
                 ];
                 
                 const result = await client.query(query, values);
@@ -61,29 +55,24 @@ class Account {
         }
     }
 
-    /**
-     * Find all accounts for a user
-     * @param {number} userId - User ID
-     * @returns {Promise<Array>} Array of accounts
-     */
-    static async findByUserId(userId) {
-        const query = `
+    static async findByUserId(userId, fopOnly = false) {
+        let query = `
             SELECT a.*, mc.client_name
             FROM accounts a
             LEFT JOIN monobank_connections mc ON a.monobank_connection_id = mc.id
             WHERE a.user_id = $1 AND a.is_active = true
-            ORDER BY a.created_at DESC
         `;
+        
+        if (fopOnly) {
+            query += ` AND a.account_type = 'fop'`;
+        }
+        
+        query += ` ORDER BY a.created_at DESC`;
         
         const result = await db.query(query, [userId]);
         return result.rows;
     }
 
-    /**
-     * Find account by ID
-     * @param {number} accountId - Account ID
-     * @returns {Promise<Object|null>} Account or null
-     */
     static async findById(accountId) {
         const query = `
             SELECT * FROM accounts
@@ -94,12 +83,6 @@ class Account {
         return result.rows[0] || null;
     }
 
-    /**
-     * Find account by Monobank account_id
-     * @param {number} userId - User ID
-     * @param {string} accountId - Monobank account ID
-     * @returns {Promise<Object|null>} Account or null
-     */
     static async findByMonobankAccountId(userId, accountId) {
         const query = `
             SELECT * FROM accounts
@@ -110,12 +93,6 @@ class Account {
         return result.rows[0] || null;
     }
 
-    /**
-     * Update account balance
-     * @param {number} accountId - Account ID
-     * @param {number} balance - New balance in kopiykas
-     * @returns {Promise<Object>} Updated account
-     */
     static async updateBalance(accountId, balance) {
         const query = `
             UPDATE accounts 
@@ -128,24 +105,29 @@ class Account {
         return result.rows[0];
     }
 
-    /**
-     * Get total balance for all user accounts
-     * @param {number} userId - User ID
-     * @returns {Promise<Object>} Object with currency_code and total balance
-     */
-    static async getTotalBalance(userId) {
-        const query = `
+
+    static async getTotalBalance(userId, fopOnly = false) {
+        let query = `
             SELECT 
                 currency_code,
                 SUM(balance) as total_balance,
                 COUNT(*) as accounts_count
             FROM accounts
             WHERE user_id = $1 AND is_active = true
-            GROUP BY currency_code
         `;
+        
+        if (fopOnly) {
+            query += ` AND account_type = 'fop'`;
+        }
+        
+        query += ` GROUP BY currency_code`;
         
         const result = await db.query(query, [userId]);
         return result.rows;
+    }
+
+    static async getFopAccounts(userId) {
+        return this.findByUserId(userId, true);
     }
 }
 

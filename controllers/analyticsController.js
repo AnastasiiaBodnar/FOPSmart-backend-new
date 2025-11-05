@@ -9,12 +9,14 @@ class AnalyticsController {
         try {
             const userId = req.user.id;
             const days = parseInt(req.query.days) || 30;
+            const fopOnly = req.query.fopOnly === 'false' ? false : true; // За замовчуванням true
 
-            const analytics = await Analytics.getDashboardAnalytics(userId, days);
+            const analytics = await Analytics.getDashboardAnalytics(userId, days, fopOnly);
             
             const limitStatus = await LimitService.checkUserLimit(userId);
 
             res.json({
+                fopOnly,
                 period: {
                     days,
                     from: new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString(),
@@ -62,6 +64,7 @@ class AnalyticsController {
         try {
             const userId = req.user.id;
             const period = req.query.period || 'month';
+            const fopOnly = req.query.fopOnly === 'false' ? false : true;
 
             if (!['week', 'month', 'quarter', 'year'].includes(period)) {
                 return res.status(400).json({
@@ -69,9 +72,10 @@ class AnalyticsController {
                 });
             }
 
-            const trends = await Analytics.getSpendingTrends(userId, period);
+            const trends = await Analytics.getSpendingTrends(userId, period, fopOnly);
 
             res.json({
+                fopOnly,
                 period,
                 trends: trends.map(t => ({
                     date: t.date,
@@ -95,6 +99,7 @@ class AnalyticsController {
             const userId = req.user.id;
             const groupBy = req.query.groupBy || 'month';
             const limit = parseInt(req.query.limit) || 12;
+            const fopOnly = req.query.fopOnly === 'false' ? false : true;
 
             if (!['day', 'week', 'month'].includes(groupBy)) {
                 return res.status(400).json({
@@ -102,9 +107,10 @@ class AnalyticsController {
                 });
             }
 
-            const data = await Analytics.getIncomeVsExpenses(userId, groupBy, limit);
+            const data = await Analytics.getIncomeVsExpenses(userId, groupBy, limit, fopOnly);
 
             res.json({
+                fopOnly,
                 groupBy,
                 periods: data.length,
                 data: data.map(d => ({
@@ -163,7 +169,8 @@ class AnalyticsController {
                 utilizationPercentage: (totalIncome / limitInfo.annualLimit * 100).toFixed(2),
                 remaining: (limitInfo.annualLimit - totalIncome) / 100,
                 monthsWithIncome: parseInt(utilization.months_with_income || 0),
-                monthlyBreakdown: months
+                monthlyBreakdown: months,
+                note: 'This data includes only FOP account transactions'
             });
 
         } catch (error) {

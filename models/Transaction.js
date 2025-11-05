@@ -3,11 +3,6 @@
 const db = require('../db/pool');
 
 class Transaction {
-    /**
-     * Create a single transaction
-     * @param {Object} data - Transaction data
-     * @returns {Promise<Object>} Created transaction
-     */
     static async create(data) {
         const query = `
             INSERT INTO transactions 
@@ -47,11 +42,6 @@ class Transaction {
         return result.rows[0];
     }
 
-    /**
-     * Bulk create transactions
-     * @param {Array} transactions - Array of transaction objects
-     * @returns {Promise<number>} Number of created transactions
-     */
     static async bulkCreate(transactions) {
         if (!transactions || transactions.length === 0) {
             return 0;
@@ -82,18 +72,13 @@ class Transaction {
         }
     }
 
-    /**
-     * Find transactions by user ID with filters
-     * @param {number} userId - User ID
-     * @param {Object} filters - Filter options
-     * @returns {Promise<Array>} Array of transactions
-     */
     static async findByUserId(userId, filters = {}) {
         let query = `
             SELECT 
                 t.*,
                 a.iban,
                 a.masked_pan,
+                a.account_type,
                 mcc.category_name_uk,
                 mcc.category_name_en,
                 mcc.parent_category_uk,
@@ -106,6 +91,10 @@ class Transaction {
         
         const params = [userId];
         let paramIndex = 2;
+
+        if (filters.fopOnly) {
+            query += ` AND a.account_type = 'fop'`;
+        }
 
         if (filters.dateFrom) {
             query += ` AND t.transaction_date >= $${paramIndex}`;
@@ -159,21 +148,20 @@ class Transaction {
         return result.rows;
     }
 
-    /**
-     * Count transactions with filters
-     * @param {number} userId - User ID
-     * @param {Object} filters - Filter options
-     * @returns {Promise<number>} Total count
-     */
     static async count(userId, filters = {}) {
         let query = `
             SELECT COUNT(*) as total
             FROM transactions t
+            LEFT JOIN accounts a ON t.account_id = a.id
             WHERE t.user_id = $1
         `;
         
         const params = [userId];
         let paramIndex = 2;
+
+        if (filters.fopOnly) {
+            query += ` AND a.account_type = 'fop'`;
+        }
 
         if (filters.dateFrom) {
             query += ` AND t.transaction_date >= $${paramIndex}`;
@@ -209,43 +197,42 @@ class Transaction {
         return parseInt(result.rows[0].total);
     }
 
-    /**
-     * Get statistics for user transactions
-     * @param {number} userId - User ID
-     * @param {Object} filters - Filter options (dateFrom, dateTo, accountId)
-     * @returns {Promise<Object>} Statistics object
-     */
     static async getStats(userId, filters = {}) {
         let query = `
             SELECT 
                 COUNT(*) as total_transactions,
-                SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) as total_income,
-                SUM(CASE WHEN amount < 0 THEN amount ELSE 0 END) as total_expense,
-                SUM(CASE WHEN amount > 0 THEN 1 ELSE 0 END) as income_count,
-                SUM(CASE WHEN amount < 0 THEN 1 ELSE 0 END) as expense_count,
-                AVG(CASE WHEN amount < 0 THEN amount ELSE NULL END) as avg_expense,
-                SUM(cashback_amount) as total_cashback
-            FROM transactions
-            WHERE user_id = $1
+                SUM(CASE WHEN t.amount > 0 THEN t.amount ELSE 0 END) as total_income,
+                SUM(CASE WHEN t.amount < 0 THEN t.amount ELSE 0 END) as total_expense,
+                SUM(CASE WHEN t.amount > 0 THEN 1 ELSE 0 END) as income_count,
+                SUM(CASE WHEN t.amount < 0 THEN 1 ELSE 0 END) as expense_count,
+                AVG(CASE WHEN t.amount < 0 THEN t.amount ELSE NULL END) as avg_expense,
+                SUM(t.cashback_amount) as total_cashback
+            FROM transactions t
+            LEFT JOIN accounts a ON t.account_id = a.id
+            WHERE t.user_id = $1
         `;
         
         const params = [userId];
         let paramIndex = 2;
 
+        if (filters.fopOnly) {
+            query += ` AND a.account_type = 'fop'`;
+        }
+
         if (filters.dateFrom) {
-            query += ` AND transaction_date >= $${paramIndex}`;
+            query += ` AND t.transaction_date >= $${paramIndex}`;
             params.push(filters.dateFrom);
             paramIndex++;
         }
 
         if (filters.dateTo) {
-            query += ` AND transaction_date <= $${paramIndex}`;
+            query += ` AND t.transaction_date <= $${paramIndex}`;
             params.push(filters.dateTo);
             paramIndex++;
         }
 
         if (filters.accountId) {
-            query += ` AND account_id = $${paramIndex}`;
+            query += ` AND t.account_id = $${paramIndex}`;
             params.push(filters.accountId);
             paramIndex++;
         }
@@ -254,12 +241,6 @@ class Transaction {
         return result.rows[0];
     }
 
-    /**
-     * Get transactions grouped by MCC category
-     * @param {number} userId - User ID
-     * @param {Object} filters - Filter options
-     * @returns {Promise<Array>} Array of categories with totals
-     */
     static async getByCategory(userId, filters = {}) {
         let query = `
             SELECT 
@@ -271,12 +252,17 @@ class Transaction {
                 COUNT(*) as transaction_count,
                 SUM(CASE WHEN t.amount < 0 THEN ABS(t.amount) ELSE 0 END) as total_spent
             FROM transactions t
+            LEFT JOIN accounts a ON t.account_id = a.id
             LEFT JOIN mcc_categories mcc ON t.mcc = mcc.mcc_code
             WHERE t.user_id = $1 AND t.amount < 0
         `;
         
         const params = [userId];
         let paramIndex = 2;
+
+        if (filters.fopOnly) {
+            query += ` AND a.account_type = 'fop'`;
+        }
 
         if (filters.dateFrom) {
             query += ` AND t.transaction_date >= $${paramIndex}`;
@@ -300,12 +286,6 @@ class Transaction {
         return result.rows;
     }
 
-    /**
-     * Check if transaction exists
-     * @param {number} userId - User ID
-     * @param {string} monobankTransactionId - Monobank transaction ID
-     * @returns {Promise<boolean>}
-     */
     static async exists(userId, monobankTransactionId) {
         const query = `
             SELECT EXISTS(
@@ -318,11 +298,6 @@ class Transaction {
         return result.rows[0].exists;
     }
 
-    /**
-     * Get latest transaction date for account
-     * @param {number} accountId - Account ID
-     * @returns {Promise<Date|null>} Latest transaction date
-     */
     static async getLatestDate(accountId) {
         const query = `
             SELECT MAX(transaction_date) as latest_date

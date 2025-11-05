@@ -15,6 +15,7 @@ var monobankRouter = require('./routes/monobank');
 var transactionsRouter = require('./routes/transactions');
 var profileRouter = require('./routes/profile');
 var analyticsRouter = require('./routes/analytics');
+var reportsRouter = require('./routes/reports');
 
 var app = express();
 
@@ -37,6 +38,7 @@ app.use('/api/monobank', monobankRouter);
 app.use('/api/transactions', transactionsRouter);
 app.use('/api/profile', profileRouter);
 app.use('/api/analytics', analyticsRouter);
+app.use('/api/reports', reportsRouter);
 
 app.get('/healthz', async function(req, res) {
   try {
