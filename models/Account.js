@@ -3,13 +3,6 @@
 const db = require('../db/pool');
 
 class Account {
-    /**
-     * Create new account(s) from Monobank client info
-     * @param {number} userId - User ID
-     * @param {number} monobankConnectionId - Monobank connection ID
-     * @param {Array} accounts - Array of account objects from Monobank API
-     * @returns {Promise<Array>} Created accounts
-     */
     static async bulkCreate(userId, monobankConnectionId, accounts) {
         const client = await db.getClient();
         
@@ -61,11 +54,6 @@ class Account {
         }
     }
 
-    /**
-     * Find all accounts for a user
-     * @param {number} userId - User ID
-     * @returns {Promise<Array>} Array of accounts
-     */
     static async findByUserId(userId) {
         const query = `
             SELECT a.*, mc.client_name
@@ -79,11 +67,6 @@ class Account {
         return result.rows;
     }
 
-    /**
-     * Find account by ID
-     * @param {number} accountId - Account ID
-     * @returns {Promise<Object|null>} Account or null
-     */
     static async findById(accountId) {
         const query = `
             SELECT * FROM accounts
@@ -94,12 +77,6 @@ class Account {
         return result.rows[0] || null;
     }
 
-    /**
-     * Find account by Monobank account_id
-     * @param {number} userId - User ID
-     * @param {string} accountId - Monobank account ID
-     * @returns {Promise<Object|null>} Account or null
-     */
     static async findByMonobankAccountId(userId, accountId) {
         const query = `
             SELECT * FROM accounts
@@ -110,12 +87,6 @@ class Account {
         return result.rows[0] || null;
     }
 
-    /**
-     * Update account balance
-     * @param {number} accountId - Account ID
-     * @param {number} balance - New balance in kopiykas
-     * @returns {Promise<Object>} Updated account
-     */
     static async updateBalance(accountId, balance) {
         const query = `
             UPDATE accounts 
@@ -128,11 +99,6 @@ class Account {
         return result.rows[0];
     }
 
-    /**
-     * Get total balance for all user accounts
-     * @param {number} userId - User ID
-     * @returns {Promise<Object>} Object with currency_code and total balance
-     */
     static async getTotalBalance(userId) {
         const query = `
             SELECT 

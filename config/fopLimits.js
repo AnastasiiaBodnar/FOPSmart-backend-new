@@ -2,17 +2,17 @@
 
 const FOP_LIMITS_2025 = {
     1: {
-        annualLimit: 167 * 3028 * 100,
+        annualLimit: 167 * 3028,
         description: 'ФОП 1 група',
         taxRate: 0
     },
     2: {
-        annualLimit: 1000 * 3028 * 100,
+        annualLimit: 1000 * 3028,
         description: 'ФОП 2 група',
         taxRate: 2
     },
     3: {
-        annualLimit: 7000000 * 100,
+        annualLimit: 7000000 ,
         description: 'ФОП 3 група',
         taxRate: 5
     }
@@ -34,14 +34,14 @@ function getLimitByGroup(fopGroup) {
     return {
         group: fopGroup,
         annualLimit: limit.annualLimit,
-        annualLimitUAH: limit.annualLimit / 100,
+        annualLimitUAH: limit.annualLimit,
         description: limit.description,
         taxRate: limit.taxRate
     };
 }
 
 function calculateLimitProgress(currentIncome, annualLimit) {
-    const percentage = (currentIncome / annualLimit) * 100;
+    const percentage = (currentIncome / annualLimit);
     const remaining = annualLimit - currentIncome;
     
     let status = 'ok';
@@ -55,12 +55,12 @@ function calculateLimitProgress(currentIncome, annualLimit) {
     
     return {
         currentIncome,
-        currentIncomeUAH: currentIncome / 100,
+        currentIncomeUAH: currentIncome ,
         annualLimit,
-        annualLimitUAH: annualLimit / 100,
+        annualLimitUAH: annualLimit,
         percentage: Math.round(percentage * 100) / 100,
         remaining,
-        remainingUAH: remaining / 100,
+        remainingUAH: remaining ,
         status
     };
 }
