@@ -7,10 +7,7 @@ const Transaction = require('../models/Transaction');
 const monobankService = require('../services/monobankService');
 
 class MonobankController {
-    /**
-     * Connect user's Monobank account
-     * POST /api/monobank/connect
-     */
+
     static async connect(req, res) {
         try {
             const errors = validationResult(req);
@@ -46,6 +43,8 @@ class MonobankController {
                 clientInfo.accounts
             );
 
+            const fopAccounts = accounts.filter(acc => acc.account_type === 'fop');
+
             res.status(201).json({
                 message: 'Monobank connected successfully',
                 connection: {
@@ -55,6 +54,14 @@ class MonobankController {
                     connectedAt: connection.created_at
                 },
                 accounts: accounts.map(acc => ({
+                    id: acc.id,
+                    balance: acc.balance,
+                    currencyCode: acc.currency_code,
+                    iban: acc.iban,
+                    type: acc.account_type,
+                    isFop: acc.account_type === 'fop'
+                })),
+                fopAccounts: fopAccounts.map(acc => ({
                     id: acc.id,
                     balance: acc.balance,
                     currencyCode: acc.currency_code,
@@ -71,10 +78,6 @@ class MonobankController {
         }
     }
 
-    /**
-     * Get connection status
-     * GET /api/monobank/status
-     */
     static async getStatus(req, res) {
         try {
             const userId = req.user.id;
@@ -86,7 +89,8 @@ class MonobankController {
                 });
             }
 
-            const accounts = await Account.findByUserId(userId);
+            const allAccounts = await Account.findByUserId(userId);
+            const fopAccounts = await Account.getFopAccounts(userId);
 
             res.json({
                 connected: true,
@@ -96,7 +100,14 @@ class MonobankController {
                     lastSync: connection.last_sync_at,
                     connectedAt: connection.created_at
                 },
-                accountsCount: accounts.length
+                accountsCount: allAccounts.length,
+                fopAccountsCount: fopAccounts.length,
+                accounts: allAccounts.map(acc => ({
+                    id: acc.id,
+                    type: acc.account_type,
+                    isFop: acc.account_type === 'fop',
+                    iban: acc.iban
+                }))
             });
 
         } catch (error) {
@@ -107,10 +118,6 @@ class MonobankController {
         }
     }
 
-    /**
-     * Disconnect Monobank account
-     * DELETE /api/monobank/disconnect
-     */
     static async disconnect(req, res) {
         try {
             const userId = req.user.id;
@@ -136,10 +143,6 @@ class MonobankController {
         }
     }
 
-    /**
-     * Get client info and accounts
-     * GET /api/monobank/client-info
-     */
     static async getClientInfo(req, res) {
         try {
             const userId = req.user.id;
@@ -153,10 +156,20 @@ class MonobankController {
 
             const clientInfo = await monobankService.getClientInfo(token);
 
+            const accountsWithFopFlag = clientInfo.accounts.map(acc => ({
+                ...acc,
+                isFop: acc.type === 'fop'
+            }));
+
+            const fopAccounts = accountsWithFopFlag.filter(acc => acc.isFop);
+
             res.json({
                 clientId: clientInfo.clientId,
                 name: clientInfo.name,
-                accounts: clientInfo.accounts
+                accounts: accountsWithFopFlag,
+                fopAccounts: fopAccounts,
+                totalAccounts: accountsWithFopFlag.length,
+                fopAccountsCount: fopAccounts.length
             });
 
         } catch (error) {
@@ -174,10 +187,6 @@ class MonobankController {
         }
     }
 
-    /**
-     * Sync transactions from Monobank
-     * POST /api/monobank/sync
-     */
     static async syncTransactions(req, res) {
         try {
             const userId = req.user.id;
@@ -189,20 +198,22 @@ class MonobankController {
                 });
             }
 
-            const accounts = await Account.findByUserId(userId);
-            if (!accounts || accounts.length === 0) {
+            const fopAccounts = await Account.getFopAccounts(userId);
+            
+            if (!fopAccounts || fopAccounts.length === 0) {
                 return res.status(404).json({
-                    message: 'No accounts found. Please reconnect Monobank.'
+                    message: 'No FOP accounts found. Please ensure you have a FOP account in Monobank.'
                 });
             }
 
             let totalSynced = 0;
             const errors = [];
+            const syncedAccounts = [];
 
-            for (const account of accounts) {
+            for (const account of fopAccounts) {
                 try {
                     const toTimestamp = Math.floor(Date.now() / 1000);
-                    const fromTimestamp = toTimestamp - (31 * 24 * 60 * 60);
+                    const fromTimestamp = toTimestamp - (31 * 24 * 60 * 60); // 31 день
 
                     const monobankTransactions = await monobankService.getStatements(
                         token,
@@ -242,10 +253,17 @@ class MonobankController {
                         await Account.updateBalance(account.id, latestBalance);
                     }
 
+                    syncedAccounts.push({
+                        accountId: account.account_id,
+                        iban: account.iban,
+                        transactionsSynced: synced
+                    });
+
                 } catch (error) {
-                    console.error(`Error syncing account ${account.account_id}:`, error);
+                    console.error(`Error syncing FOP account ${account.account_id}:`, error);
                     errors.push({
                         accountId: account.account_id,
+                        iban: account.iban,
                         error: error.message
                     });
                 }
@@ -254,9 +272,10 @@ class MonobankController {
             await MonobankConnection.updateLastSync(userId);
 
             res.json({
-                message: 'Sync completed',
+                message: 'Sync completed (FOP accounts only)',
                 syncedTransactions: totalSynced,
-                accountsProcessed: accounts.length,
+                fopAccountsProcessed: fopAccounts.length,
+                syncedAccounts: syncedAccounts,
                 errors: errors.length > 0 ? errors : undefined,
                 lastSync: new Date().toISOString()
             });

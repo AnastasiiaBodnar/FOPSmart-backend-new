@@ -43,6 +43,26 @@ class PDFService {
         return doc;
     }
 
+    static generateQuickSummary(data) {
+        const doc = new PDFDocument({
+            size: 'A4',
+            margin: 50
+        });
+
+        doc.registerFont('Regular', FONTS.regular);
+        doc.registerFont('Bold', FONTS.bold);
+
+        this.addHeader(doc, data);
+        this.addPeriodInfo(doc, data.period);
+        this.addFinancialSummary(doc, data.summary);
+        
+        if (data.limitStatus) this.addLimitStatus(doc, data.limitStatus);
+
+        this.addFooter(doc);
+        doc.end();
+        return doc;
+    }
+
     static addHeader(doc, data) {
         doc.fontSize(24).font('Bold').text('Фінансовий звіт FOPSmart', { align: 'center' });
 
@@ -141,7 +161,7 @@ class PDFService {
         doc.fontSize(10).font('Bold').fillColor('#6B7280');
         doc.text('#', 50, top, { width: cols[0] });
         doc.text('Категорія', 50 + cols[0], top, { width: cols[1] });
-        doc.text('Транзакції', 50 + cols[0] + cols[1], top, { width: cols[2] });
+        doc.text('Транзакцій', 50 + cols[0] + cols[1], top, { width: cols[2] });
         doc.text('Сума', 50 + cols[0] + cols[1] + cols[2], top, { width: cols[3], align: 'right' });
         doc.moveTo(50, top + 18).lineTo(550, top + 18).stroke('#E5E7EB');
 
@@ -190,14 +210,44 @@ class PDFService {
     }
 
     static addFooter(doc) {
-        const pages = doc.bufferedPageRange().count;
-        for (let i = 0; i < pages; i++) {
-            doc.switchToPage(i);
+        const pageRange = doc.bufferedPageRange();
+        const totalPages = pageRange.count;
+        const startPage = pageRange.start;
+        
+        const savedY = doc.y;
+        
+        for (let pageNum = 0; pageNum < totalPages; pageNum++) {
+            if (pageNum > 0) {
+                try {
+                    doc.switchToPage(pageNum);
+                } catch (e) {
+                    console.warn(`Could not switch to page ${pageNum}:`, e.message);
+                    continue;
+                }
+            }
+            
+            // Додаємо лінію та текст футера
             doc.moveTo(50, 770).lineTo(550, 770).stroke('#E5E7EB');
             doc.fontSize(8).font('Regular').fillColor('#9CA3AF')
-                .text(`Згенеровано ${moment().format('DD.MM.YYYY HH:mm')} | FOPSmart`, 50, 775, { align: 'center', width: 500 })
-                .text(`Сторінка ${i + 1} з ${pages}`, 50, 785, { align: 'center', width: 500 });
+                .text(`Згенеровано ${moment().format('DD.MM.YYYY HH:mm')} | FOPSmart`, 50, 775, { 
+                    align: 'center', 
+                    width: 500 
+                })
+                .text(`Сторінка ${pageNum + 1} з ${totalPages}`, 50, 785, { 
+                    align: 'center', 
+                    width: 500 
+                });
         }
+        
+        if (totalPages > 1) {
+            try {
+                doc.switchToPage(totalPages - 1);
+            } catch (e) {
+                // Ігноруємо помилку
+            }
+        }
+        
+        doc.y = savedY;
     }
 }
 

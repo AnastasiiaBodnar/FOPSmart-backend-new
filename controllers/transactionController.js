@@ -16,7 +16,8 @@ class TransactionController {
                 mcc,
                 excludeHolds,
                 limit,
-                offset
+                offset,
+                fopOnly 
             } = req.query;
 
             const filters = {
@@ -28,17 +29,19 @@ class TransactionController {
                 mcc: mcc ? parseInt(mcc) : null,
                 excludeHolds: excludeHolds === 'true',
                 limit: limit ? parseInt(limit) : 50,
-                offset: offset ? parseInt(offset) : 0
+                offset: offset ? parseInt(offset) : 0,
+                fopOnly: fopOnly === 'false' ? false : true
             };
 
             const transactions = await Transaction.findByUserId(userId, filters);
             const total = await Transaction.count(userId, filters);
 
             res.json({
+                fopOnly: filters.fopOnly,
                 transactions: transactions.map(tx => ({
                     id: tx.id,
-                    amount: tx.amount / 100,
-                    balance: tx.balance / 100,
+                    amount: tx.amount,
+                    balance: tx.balance,
                     currencyCode: tx.currency_code,
                     description: tx.description,
                     comment: tx.comment,
@@ -57,9 +60,11 @@ class TransactionController {
                     account: {
                         id: tx.account_id,
                         iban: tx.iban,
-                        maskedPan: tx.masked_pan
+                        maskedPan: tx.masked_pan,
+                        type: tx.account_type,
+                        isFop: tx.account_type === 'fop'
                     },
-                    cashback: tx.cashback_amount / 100,
+                    cashback: tx.cashback_amount,
                     receiptId: tx.receipt_id
                 })),
                 pagination: {
@@ -82,29 +87,31 @@ class TransactionController {
     static async getStats(req, res) {
         try {
             const userId = req.user.id;
-            const { dateFrom, dateTo, accountId } = req.query;
+            const { dateFrom, dateTo, accountId, fopOnly } = req.query;
 
             const filters = {
                 dateFrom: dateFrom || null,
                 dateTo: dateTo || null,
-                accountId: accountId ? parseInt(accountId) : null
+                accountId: accountId ? parseInt(accountId) : null,
+                fopOnly: fopOnly === 'false' ? false : true
             };
 
             const stats = await Transaction.getStats(userId, filters);
 
             res.json({
+                fopOnly: filters.fopOnly,
                 totalTransactions: parseInt(stats.total_transactions),
                 income: {
-                    total: (parseInt(stats.total_income) || 0) / 100,
+                    total: parseInt(stats.total_income) || 0,
                     count: parseInt(stats.income_count) || 0
                 },
                 expense: {
-                    total: Math.abs(parseInt(stats.total_expense)) / 100 || 0,
+                    total: Math.abs(parseInt(stats.total_expense)) || 0,
                     count: parseInt(stats.expense_count) || 0,
-                    average: Math.abs(parseInt(stats.avg_expense)) / 100 || 0
+                    average: Math.abs(parseInt(stats.avg_expense)) || 0
                 },
-                cashback: (parseInt(stats.total_cashback) || 0) / 100,
-                netIncome: ((parseInt(stats.total_income) || 0) + (parseInt(stats.total_expense) || 0)) / 100
+                cashback: parseInt(stats.total_cashback) || 0,
+                netIncome: (parseInt(stats.total_income) || 0) + (parseInt(stats.total_expense) || 0)
             });
 
         } catch (error) {
@@ -118,16 +125,18 @@ class TransactionController {
     static async getByCategory(req, res) {
         try {
             const userId = req.user.id;
-            const { dateFrom, dateTo } = req.query;
+            const { dateFrom, dateTo, fopOnly } = req.query;
 
             const filters = {
                 dateFrom: dateFrom || null,
-                dateTo: dateTo || null
+                dateTo: dateTo || null,
+                fopOnly: fopOnly === 'false' ? false : true
             };
 
             const categories = await Transaction.getByCategory(userId, filters);
 
             res.json({
+                fopOnly: filters.fopOnly,
                 categories: categories.map(cat => ({
                     mcc: cat.mcc,
                     name: cat.category_name_uk,
@@ -135,7 +144,7 @@ class TransactionController {
                     parentCategory: cat.parent_category_uk,
                     color: cat.color,
                     transactionCount: parseInt(cat.transaction_count),
-                    totalSpent: parseInt(cat.total_spent) / 100
+                    totalSpent: parseInt(cat.total_spent)
                 }))
             });
 
@@ -150,22 +159,27 @@ class TransactionController {
     static async getBalances(req, res) {
         try {
             const userId = req.user.id;
+            const { fopOnly } = req.query;
 
-            const accounts = await Account.findByUserId(userId);
-            const totalBalances = await Account.getTotalBalance(userId);
+            const filterFop = fopOnly === 'false' ? false : true;
+
+            const accounts = await Account.findByUserId(userId, filterFop);
+            const totalBalances = await Account.getTotalBalance(userId, filterFop);
 
             res.json({
+                fopOnly: filterFop,
                 accounts: accounts.map(acc => ({
                     id: acc.id,
-                    balance: acc.balance / 100,
+                    balance: acc.balance,
                     currencyCode: acc.currency_code,
                     iban: acc.iban,
                     maskedPan: acc.masked_pan,
-                    type: acc.account_type
+                    type: acc.account_type,
+                    isFop: acc.account_type === 'fop'
                 })),
                 total: totalBalances.map(tb => ({
                     currencyCode: tb.currency_code,
-                    balance: parseInt(tb.total_balance) / 100,
+                    balance: parseInt(tb.total_balance),
                     accountsCount: parseInt(tb.accounts_count)
                 }))
             });

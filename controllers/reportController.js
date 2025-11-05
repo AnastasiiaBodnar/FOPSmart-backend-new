@@ -42,7 +42,7 @@ class ReportController {
 
             const fopInfo = await User.getFopInfo(userId);
 
-            const analytics = await Analytics.getDashboardAnalytics(userId, days);
+            const analytics = await Analytics.getDashboardAnalytics(userId, days, true); // fopOnly = true
 
             let limitStatus = null;
             if (fopInfo && fopInfo.fop_group) {
@@ -66,7 +66,7 @@ class ReportController {
                 totalSpent: parseInt(cat.total) / 100
             }));
 
-            const monthlyData = await Analytics.getIncomeVsExpenses(userId, 'month', 12);
+            const monthlyData = await Analytics.getIncomeVsExpenses(userId, 'month', 12, true); // fopOnly = true
             const formattedMonthlyData = monthlyData.map(m => ({
                 period: m.period,
                 income: parseInt(m.income) / 100,
@@ -145,7 +145,7 @@ class ReportController {
             const user = await User.findById(userId);
             const fopInfo = await User.getFopInfo(userId);
 
-            const analytics = await Analytics.getDashboardAnalytics(userId, days);
+            const analytics = await Analytics.getDashboardAnalytics(userId, days, true);
 
             let limitStatus = null;
             if (fopInfo && fopInfo.fop_group) {
@@ -162,6 +162,7 @@ class ReportController {
             }
 
             res.json({
+                fopOnly: true, 
                 user: {
                     firstName: user.first_name,
                     lastName: user.last_name,
@@ -195,12 +196,12 @@ class ReportController {
                 {
                     id: 'full',
                     name: 'Повний звіт',
-                    description: 'Детальний фінансовий звіт з аналітикою та графіками'
+                    description: 'Детальний фінансовий звіт з аналітикою та графіками (тільки ФОП транзакції)'
                 },
                 {
                     id: 'quick',
                     name: 'Швидка зводка',
-                    description: 'Коротка зводка доходів та витрат'
+                    description: 'Коротка зводка доходів та витрат (тільки ФОП транзакції)'
                 }
             ]
         });

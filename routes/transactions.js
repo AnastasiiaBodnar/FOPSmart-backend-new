@@ -10,11 +10,20 @@ const { verifyToken } = require('../middleware/auth');
  * @swagger
  * /api/transactions:
  *   get:
- *     summary: Get user transactions with filters
+ *     summary: Get user transactions with filters (FOP accounts only by default)
+ *     description: |
+ *       Returns transactions from user's accounts. By default, only FOP account transactions are returned.
+ *       To include all accounts, set fopOnly=false.
  *     tags: [Transactions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
+ *       - name: fopOnly
+ *         in: query
+ *         schema:
+ *           type: boolean
+ *           default: true
+ *         description: Filter only FOP account transactions (default true)
  *       - name: dateFrom
  *         in: query
  *         schema:
@@ -77,11 +86,17 @@ router.get('/', verifyToken, TransactionController.getTransactions);
  * @swagger
  * /api/transactions/stats:
  *   get:
- *     summary: Get transaction statistics
+ *     summary: Get transaction statistics (FOP accounts only by default)
  *     tags: [Transactions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
+ *       - name: fopOnly
+ *         in: query
+ *         schema:
+ *           type: boolean
+ *           default: true
+ *         description: Calculate only FOP account statistics (default true)
  *       - name: dateFrom
  *         in: query
  *         schema:
@@ -106,11 +121,17 @@ router.get('/stats', verifyToken, TransactionController.getStats);
  * @swagger
  * /api/transactions/by-category:
  *   get:
- *     summary: Get transactions grouped by category
+ *     summary: Get transactions grouped by category (FOP accounts only by default)
  *     tags: [Transactions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
+ *       - name: fopOnly
+ *         in: query
+ *         schema:
+ *           type: boolean
+ *           default: true
+ *         description: Group only FOP account transactions (default true)
  *       - name: dateFrom
  *         in: query
  *         schema:
@@ -131,10 +152,17 @@ router.get('/by-category', verifyToken, TransactionController.getByCategory);
  * @swagger
  * /api/transactions/balances:
  *   get:
- *     summary: Get account balances
+ *     summary: Get account balances (FOP accounts only by default)
  *     tags: [Transactions]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - name: fopOnly
+ *         in: query
+ *         schema:
+ *           type: boolean
+ *           default: true
+ *         description: Show only FOP account balances (default true)
  *     responses:
  *       200:
  *         description: Account balances
