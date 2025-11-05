@@ -96,10 +96,10 @@ class ProfileController {
                 configured: true,
                 year: limitCheck.year,
                 fopGroup: limitCheck.fopGroup,
-                currentIncome: limitCheck.currentIncomeUAH,
-                limit: limitCheck.annualLimitUAH,
+                currentIncome: (limitCheck.currentIncomeUAH / 100).toFixed(2), 
+                limit: (limitCheck.annualLimitUAH / 100).toFixed(2),           
                 percentage: limitCheck.percentage,
-                remaining: limitCheck.remainingUAH,
+                remaining: (limitCheck.remainingUAH / 100).toFixed(2),         
                 status: limitCheck.status
             });
             

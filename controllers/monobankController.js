@@ -5,6 +5,7 @@ const MonobankConnection = require('../models/MonobankConnection');
 const Account = require('../models/Account');
 const Transaction = require('../models/Transaction');
 const monobankService = require('../services/monobankService');
+const IncomeTrackingService = require('../services/incomeTrackingService'); // [NEW] Додано require
 
 class MonobankController {
 
@@ -270,6 +271,12 @@ class MonobankController {
             }
 
             await MonobankConnection.updateLastSync(userId);
+            
+            try {
+                await IncomeTrackingService.updateUserIncome(userId);
+            } catch (error) {
+                console.error('Failed to update income tracking:', error);
+            }
 
             res.json({
                 message: 'Sync completed (FOP accounts only)',
