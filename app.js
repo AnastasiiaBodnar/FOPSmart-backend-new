@@ -7,6 +7,7 @@ var config = require('./config');
 var db = require('./db/pool');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
+const cors = require('cors'); 
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -19,6 +20,15 @@ var reportsRouter = require('./routes/reports');
 var notificationsRouter = require('./routes/notifications');
 
 var app = express();
+
+app.use(cors({
+  origin: true, 
+  credentials: true,
+  methods: ['GET','POST','PUT','DELETE','PATCH','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization']
+}));
+
+app.options('*', cors());
 
 app.use(logger('dev'));
 app.use(express.json());
