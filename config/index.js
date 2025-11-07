@@ -31,8 +31,12 @@ const config = {
 		idleTimeoutMillis: parseInt(process.env.PG_IDLE_TIMEOUT_MS || '30000', 10),
 		connectionTimeoutMillis: parseInt(process.env.PG_CONN_TIMEOUT_MS || '5000', 10),
 		url: process.env.DATABASE_URL
+	},
+
+	firebase: {
+		serviceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH || null,
+		serviceAccountJson: process.env.FIREBASE_SERVICE_ACCOUNT_JSON || null
 	}
 };
 
 module.exports = config;
-
