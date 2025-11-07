@@ -175,11 +175,72 @@ const updateManualTransactionValidation = [
         .withMessage('Comment must not exceed 500 characters')
 ];
 
+const updateProfileValidation = [
+    body('firstName')
+        .optional()
+        .trim()
+        .isLength({ min: 2, max: 50 })
+        .withMessage('Ім\'я повинно містити від 2 до 50 символів'),
+    
+    body('lastName')
+        .optional()
+        .trim()
+        .isLength({ min: 2, max: 50 })
+        .withMessage('Прізвище повинно містити від 2 до 50 символів'),
+    
+    body('email')
+        .optional()
+        .isEmail()
+        .normalizeEmail()
+        .withMessage('Будь ласка, введіть коректний email')
+];
+
+const changePasswordValidation = [
+    body('currentPassword')
+        .notEmpty()
+        .withMessage('Поточний пароль обов\'язковий'),
+    
+    body('newPassword')
+        .isLength({ min: 6 })
+        .withMessage('Новий пароль повинен містити мінімум 6 символів')
+        .custom((value, { req }) => {
+            if (value === req.body.currentPassword) {
+                throw new Error('Новий пароль повинен відрізнятись від поточного');
+            }
+            return true;
+        }),
+    
+    body('confirmPassword')
+        .notEmpty()
+        .withMessage('Підтвердження паролю обов\'язкове')
+        .custom((value, { req }) => {
+            if (value !== req.body.newPassword) {
+                throw new Error('Паролі не співпадають');
+            }
+            return true;
+        })
+];
+
+const deleteAccountValidation = [
+    body('password')
+        .notEmpty()
+        .withMessage('Пароль обов\'язковий для видалення акаунту'),
+    
+    body('confirmation')
+        .notEmpty()
+        .withMessage('Підтвердження обов\'язкове')
+        .equals('DELETE_MY_ACCOUNT')
+        .withMessage('Будь ласка, введіть "DELETE_MY_ACCOUNT" для підтвердження')
+];
+
 module.exports = {
     registerValidation,
     loginValidation,
     connectMonobankValidation,
     updateFopSettingsValidation,
     createManualTransactionValidation,
-    updateManualTransactionValidation
+    updateManualTransactionValidation,
+    updateProfileValidation,
+    changePasswordValidation,
+    deleteAccountValidation
 };
