@@ -54,9 +54,132 @@ const updateFopSettingsValidation = [
         .withMessage('Invalid tax system')
 ];
 
+const createManualTransactionValidation = [
+    body('amount')
+        .notEmpty()
+        .withMessage('Amount is required')
+        .isFloat({ min: 0.01 })
+        .withMessage('Amount must be greater than 0')
+        .custom((value) => {
+            if (value > 10000000) {
+                throw new Error('Amount is too large');
+            }
+            return true;
+        }),
+    
+    body('description')
+        .trim()
+        .notEmpty()
+        .withMessage('Description is required')
+        .isLength({ min: 1, max: 500 })
+        .withMessage('Description must be between 1 and 500 characters'),
+    
+    body('transactionDate')
+        .notEmpty()
+        .withMessage('Transaction date is required')
+        .isISO8601()
+        .withMessage('Invalid date format')
+        .custom((value) => {
+            const date = new Date(value);
+            const now = new Date();
+            
+            if (date > now) {
+                throw new Error('Transaction date cannot be in the future');
+            }
+            
+            const threeYearsAgo = new Date();
+            threeYearsAgo.setFullYear(now.getFullYear() - 3);
+            if (date < threeYearsAgo) {
+                throw new Error('Transaction date cannot be more than 3 years ago');
+            }
+            
+            return true;
+        }),
+    
+    body('type')
+        .notEmpty()
+        .withMessage('Transaction type is required')
+        .isIn(['income', 'expense'])
+        .withMessage('Type must be "income" or "expense"'),
+    
+    body('mcc')
+        .optional()
+        .isInt({ min: 0, max: 9999 })
+        .withMessage('Invalid MCC code'),
+    
+    body('comment')
+        .optional()
+        .trim()
+        .isLength({ max: 500 })
+        .withMessage('Comment must not exceed 500 characters'),
+    
+    body('accountId')
+        .optional()
+        .isInt()
+        .withMessage('Invalid account ID')
+];
+
+const updateManualTransactionValidation = [
+    body('amount')
+        .optional()
+        .isFloat({ min: 0.01 })
+        .withMessage('Amount must be greater than 0')
+        .custom((value) => {
+            if (value > 10000000) {
+                throw new Error('Amount is too large');
+            }
+            return true;
+        }),
+    
+    body('description')
+        .optional()
+        .trim()
+        .isLength({ min: 1, max: 500 })
+        .withMessage('Description must be between 1 and 500 characters'),
+    
+    body('transactionDate')
+        .optional()
+        .isISO8601()
+        .withMessage('Invalid date format')
+        .custom((value) => {
+            const date = new Date(value);
+            const now = new Date();
+            
+            if (date > now) {
+                throw new Error('Transaction date cannot be in the future');
+            }
+            
+            const threeYearsAgo = new Date();
+            threeYearsAgo.setFullYear(now.getFullYear() - 3);
+            if (date < threeYearsAgo) {
+                throw new Error('Transaction date cannot be more than 3 years ago');
+            }
+            
+            return true;
+        }),
+    
+    body('type')
+        .optional()
+        .isIn(['income', 'expense'])
+        .withMessage('Type must be "income" or "expense"'),
+    
+    body('mcc')
+        .optional()
+        .isInt({ min: 0, max: 9999 })
+        .withMessage('Invalid MCC code'),
+    
+    body('comment')
+        .optional()
+        .trim()
+        .isLength({ max: 500 })
+        .withMessage('Comment must not exceed 500 characters')
+];
+
 module.exports = {
     registerValidation,
     loginValidation,
     connectMonobankValidation,
-    updateFopSettingsValidation
+    updateFopSettingsValidation,
+    createManualTransactionValidation,
+    updateManualTransactionValidation
 };
