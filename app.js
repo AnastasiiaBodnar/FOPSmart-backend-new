@@ -7,6 +7,7 @@ var config = require('./config');
 var db = require('./db/pool');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
+const cors = require('cors'); 
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -16,8 +17,18 @@ var transactionsRouter = require('./routes/transactions');
 var profileRouter = require('./routes/profile');
 var analyticsRouter = require('./routes/analytics');
 var reportsRouter = require('./routes/reports');
+var notificationsRouter = require('./routes/notifications');
 
 var app = express();
+
+app.use(cors({
+  origin: true, 
+  credentials: true,
+  methods: ['GET','POST','PUT','DELETE','PATCH','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization']
+}));
+
+app.options('*', cors());
 
 app.use(logger('dev'));
 app.use(express.json());
@@ -39,6 +50,7 @@ app.use('/api/transactions', transactionsRouter);
 app.use('/api/profile', profileRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/reports', reportsRouter);
+app.use('/api/notifications', notificationsRouter);
 
 app.get('/healthz', async function(req, res) {
   try {

@@ -5,7 +5,8 @@ const MonobankConnection = require('../models/MonobankConnection');
 const Account = require('../models/Account');
 const Transaction = require('../models/Transaction');
 const monobankService = require('../services/monobankService');
-const IncomeTrackingService = require('../services/incomeTrackingService'); // [NEW] Додано require
+const IncomeTrackingService = require('../services/incomeTrackingService');
+const LimitService = require('../services/limitService');
 
 class MonobankController {
 
@@ -214,7 +215,7 @@ class MonobankController {
             for (const account of fopAccounts) {
                 try {
                     const toTimestamp = Math.floor(Date.now() / 1000);
-                    const fromTimestamp = toTimestamp - (31 * 24 * 60 * 60); // 31 день
+                    const fromTimestamp = toTimestamp - (31 * 24 * 60 * 60);
 
                     const monobankTransactions = await monobankService.getStatements(
                         token,
@@ -271,11 +272,23 @@ class MonobankController {
             }
 
             await MonobankConnection.updateLastSync(userId);
-            
+
+            let incomeUpdated = false;
             try {
                 await IncomeTrackingService.updateUserIncome(userId);
+                incomeUpdated = true;
             } catch (error) {
                 console.error('Failed to update income tracking:', error);
+            }
+
+            let notificationResult = null;
+            if (incomeUpdated) {
+                try {
+                    notificationResult = await LimitService.checkAndNotify(userId);
+                    console.log('[Sync] Notification result:', notificationResult);
+                } catch (error) {
+                    console.error('Failed to check limit and notify:', error);
+                }
             }
 
             res.json({
@@ -284,7 +297,11 @@ class MonobankController {
                 fopAccountsProcessed: fopAccounts.length,
                 syncedAccounts: syncedAccounts,
                 errors: errors.length > 0 ? errors : undefined,
-                lastSync: new Date().toISOString()
+                lastSync: new Date().toISOString(),
+                limitCheck: notificationResult ? {
+                    notificationSent: notificationResult.notificationSent,
+                    alertType: notificationResult.alertType
+                } : undefined
             });
 
         } catch (error) {

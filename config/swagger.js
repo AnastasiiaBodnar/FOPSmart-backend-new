@@ -40,6 +40,10 @@ const options = {
       {
         name: 'Analytics',
         description: 'Income, expense, and user activity analytics'
+      },
+      {
+        name: 'Notifications',
+        description: 'Push notifications and in-app notification management'
       }
     ],
     components: {

@@ -131,7 +131,7 @@ class LimitService {
 
     static generateAlertMessage(alertType, limitCheck) {
         const percentage = Math.round(limitCheck.percentage);
-        const remaining = limitCheck.remainingUAH.toLocaleString('uk-UA');
+        const remaining = (limitCheck.remainingUAH / 100).toLocaleString('uk-UA');
         
         if (alertType === 'warning') {
             return `Ви використали ${percentage}% річного ліміту. Залишилось ${remaining} грн.`;
@@ -142,6 +142,41 @@ class LimitService {
         }
         
         return `Стан ліміту: ${percentage}%`;
+    }
+
+    static async checkAndNotify(userId, year = new Date().getFullYear()) {
+        try {
+            const alertCheck = await this.shouldSendAlert(userId, year);
+            
+            if (!alertCheck.shouldSend) {
+                return {
+                    notificationSent: false,
+                    reason: alertCheck.reason || 'No notification needed'
+                };
+            }
+
+            await this.createAlert(userId, alertCheck.alertType, alertCheck.limitCheck);
+
+       
+            const NotificationService = require('./notificationService');
+            const notification = await NotificationService.sendLimitWarning(
+                userId, 
+                alertCheck.limitCheck
+            );
+
+            return {
+                notificationSent: true,
+                alertType: alertCheck.alertType,
+                notification: notification
+            };
+
+        } catch (error) {
+            console.error('[LimitService] Error in checkAndNotify:', error);
+            return {
+                notificationSent: false,
+                error: error.message
+            };
+        }
     }
 }
 
