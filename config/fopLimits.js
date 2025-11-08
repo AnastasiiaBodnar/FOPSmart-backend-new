@@ -41,7 +41,7 @@ function getLimitByGroup(fopGroup) {
 }
 
 function calculateLimitProgress(currentIncome, annualLimit) {
-    const percentage = (currentIncome / annualLimit);
+    const percentage = (currentIncome / annualLimit) * 100;
     const remaining = annualLimit - currentIncome;
     
     let status = 'ok';
