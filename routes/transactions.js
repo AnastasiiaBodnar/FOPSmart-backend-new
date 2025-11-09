@@ -260,6 +260,11 @@ router.get('/fop-accounts', verifyToken, ManualTransactionController.getUserFopA
  *     summary: Create manual transaction
  *     description: |
  *       Create a manual transaction for FOP account. 
+ *       
+ *       **accountId is now OPTIONAL!** 
+ *       
+ *       If accountId is not provided, the system will automatically use your first FOP account.
+ *       
  *       Automatically updates income tracking and checks limit status.
  *     tags: [Transactions]
  *     security:
@@ -312,7 +317,32 @@ router.get('/fop-accounts', verifyToken, ManualTransactionController.getUserFopA
  *               accountId:
  *                 type: integer
  *                 example: 123
- *                 description: FOP account ID (optional, uses first FOP account if not specified)
+ *                 description: |
+ *                   FOP account ID (OPTIONAL!)
+ *                   
+ *                   If not provided, automatically uses your first FOP account.
+ *                   
+ *                   Only needed if you have multiple FOP accounts and want to specify which one to use.
+ *           examples:
+ *             withoutAccountId:
+ *               summary: Without accountId (recommended)
+ *               value:
+ *                 amount: 5000
+ *                 description: "Оплата за послуги веб-розробки"
+ *                 transactionDate: "2024-11-05"
+ *                 type: "income"
+ *                 mcc: 5814
+ *                 comment: "Клієнт ТОВ 'Приклад'"
+ *             withAccountId:
+ *               summary: With specific accountId
+ *               value:
+ *                 amount: 5000
+ *                 description: "Оплата за послуги веб-розробки"
+ *                 transactionDate: "2024-11-05"
+ *                 type: "income"
+ *                 mcc: 5814
+ *                 comment: "Клієнт ТОВ 'Приклад'"
+ *                 accountId: 123
  *     responses:
  *       201:
  *         description: Transaction created successfully
@@ -345,11 +375,30 @@ router.get('/fop-accounts', verifyToken, ManualTransactionController.getUserFopA
  *                       type: integer
  *                     account:
  *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                         iban:
+ *                           type: string
+ *                         type:
+ *                           type: string
  *                     createdAt:
  *                       type: string
  *                       format: date-time
  *       400:
- *         description: Validation error or invalid account
+ *         description: Validation error, invalid account, or no FOP accounts found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "No FOP accounts found. Please connect Monobank first"
+ *       403:
+ *         description: Account does not belong to you
+ *       404:
+ *         description: Account not found
  *       401:
  *         description: Unauthorized
  *       500:

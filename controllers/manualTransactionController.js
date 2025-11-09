@@ -36,20 +36,38 @@ class ManualTransactionController {
             }
 
             let account;
+
             if (accountId) {
+                // Якщо користувач передав accountId - перевіряємо його
                 account = await Account.findById(accountId);
-                if (!account || account.user_id !== userId || account.account_type !== 'fop') {
+                
+                if (!account) {
+                    return res.status(404).json({
+                        message: 'Account not found'
+                    });
+                }
+                
+                if (account.user_id !== userId) {
+                    return res.status(403).json({
+                        message: 'This account does not belong to you'
+                    });
+                }
+                
+                if (account.account_type !== 'fop') {
                     return res.status(400).json({
-                        message: 'Invalid account. Account must be FOP type and belong to you'
+                        message: 'Only FOP accounts are allowed for manual transactions'
                     });
                 }
             } else {
+                // Якщо accountId не передано - автоматично беремо перший ФОП-рахунок
                 const fopAccounts = await Account.getFopAccounts(userId);
+                
                 if (!fopAccounts || fopAccounts.length === 0) {
                     return res.status(400).json({
                         message: 'No FOP accounts found. Please connect Monobank first'
                     });
                 }
+                
                 account = fopAccounts[0];
             }
 
@@ -62,7 +80,7 @@ class ManualTransactionController {
                 accountId: account.id,
                 monobankTransactionId: manualTransactionId,
                 amount: transactionAmount,
-                balance: account.balance || 0, // Don't update balance for manual transactions
+                balance: account.balance || 0,
                 currencyCode: 980, 
                 description: description,
                 comment: comment || null,
